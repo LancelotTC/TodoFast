@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:todofast/tools.dart';
 import 'package:todofast/models.dart';
+import 'package:intl/intl.dart';
 
 void main() => runApp(TodoFastApp());
 
@@ -141,6 +142,9 @@ class _TodoFastHomeState extends State<TodoFastHome> {
                       itemCount: _tasks.length,
                       itemBuilder: (context, index) {
                         final task = _tasks[index];
+                        final formattedDate =
+                            DateFormat('dd/MM/yyyy').format(task.dateAdded);
+
                         return CheckboxListTile(
                           controlAffinity: ListTileControlAffinity.leading,
                           title: Row(
@@ -157,13 +161,19 @@ class _TodoFastHomeState extends State<TodoFastHome> {
                                   ),
                                 ),
                               ),
+                              Text(
+                                formattedDate,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey[600],
+                                ),
+                              ),
                             ],
                           ),
                           value: task.done,
                           onChanged: (value) => _toggleTask(index, value),
                         );
-                      },
-                    ),
+                      }),
             ),
             if (_tasks.any((task) => task.done))
               ElevatedButton.icon(

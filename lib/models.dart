@@ -1,23 +1,31 @@
 class Task {
   String title;
-  String icon;
   bool done;
+  String icon;
+  DateTime dateAdded;
 
   Task({
     required this.title,
-    required this.icon,
     this.done = false,
-  });
+    this.icon = '📝',
+    DateTime? dateAdded,
+  }) : dateAdded = dateAdded ?? DateTime.now();
 
-  Map<String, dynamic> toJson() => {
-        'title': title,
-        'icon': icon,
-        'done': done,
-      };
+  factory Task.fromJson(Map<String, dynamic> json) {
+    return Task(
+      title: json['title'],
+      done: json['done'] ?? false,
+      icon: json['icon'] ?? '📝',
+      dateAdded: DateTime.tryParse(json['dateAdded'] ?? '') ?? DateTime.now(),
+    );
+  }
 
-  factory Task.fromJson(Map<String, dynamic> json) => Task(
-        title: json['title'],
-        icon: json['icon'],
-        done: json['done'] ?? false,
-      );
+  Map<String, dynamic> toJson() {
+    return {
+      'title': title,
+      'done': done,
+      'icon': icon,
+      'dateAdded': dateAdded.toIso8601String(),
+    };
+  }
 }
