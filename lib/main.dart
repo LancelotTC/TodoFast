@@ -1,7 +1,8 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'tools.dart';
+import 'package:todofast/tools.dart';
+import 'package:todofast/models.dart';
 
 void main() => runApp(TodoFastApp());
 
@@ -27,7 +28,7 @@ class TodoFastHome extends StatefulWidget {
 
 class _TodoFastHomeState extends State<TodoFastHome> {
   final TextEditingController _taskController = TextEditingController();
-  List<Map<String, dynamic>> _tasks = [];
+  List<Task> _tasks = [];
 
   @override
   void initState() {
@@ -39,26 +40,17 @@ class _TodoFastHomeState extends State<TodoFastHome> {
     final prefs = await SharedPreferences.getInstance();
     final taskJson = prefs.getString('tasks');
     if (taskJson != null) {
+      final decoded = json.decode(taskJson) as List;
       setState(() {
-        _tasks = List<Map<String, dynamic>>.from(json.decode(taskJson));
+        _tasks = decoded.map((t) => Task.fromJson(t)).toList();
       });
     }
   }
 
   Future<void> _saveTasks() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('tasks', json.encode(_tasks));
-  }
-
-  void __addTask() {
-    final text = _taskController.text.trim();
-    if (text.isEmpty) return;
-
-    setState(() {
-      _tasks.add({'title': capitalize(text), 'done': false});
-      _taskController.clear();
-    });
-    _saveTasks();
+    final encoded = json.encode(_tasks.map((t) => t.toJson()).toList());
+    await prefs.setString('tasks', encoded);
   }
 
   void _addTask() async {
@@ -66,15 +58,13 @@ class _TodoFastHomeState extends State<TodoFastHome> {
     if (text.isEmpty) return;
 
     final selectedEmoji = await _pickEmoji();
-
     if (selectedEmoji == null) return;
 
     setState(() {
-      _tasks.add({
-        'title': capitalize(text),
-        'done': false,
-        'icon': selectedEmoji,
-      });
+      _tasks.add(Task(
+        title: capitalize(text),
+        icon: selectedEmoji,
+      ));
       _taskController.clear();
     });
     _saveTasks();
@@ -106,14 +96,14 @@ class _TodoFastHomeState extends State<TodoFastHome> {
 
   void _toggleTask(int index, bool? value) {
     setState(() {
-      _tasks[index]['done'] = value ?? false;
+      _tasks[index].done = value ?? false;
     });
     _saveTasks();
   }
 
   void _deleteCompletedTasks() {
     setState(() {
-      _tasks = _tasks.where((task) => task['done'] == false).toList();
+      _tasks = _tasks.where((task) => !task.done).toList();
     });
     _saveTasks();
   }
@@ -155,14 +145,13 @@ class _TodoFastHomeState extends State<TodoFastHome> {
                           controlAffinity: ListTileControlAffinity.leading,
                           title: Row(
                             children: [
-                              Text(task['icon'] ?? '',
-                                  style: TextStyle(fontSize: 20)),
+                              Text(task.icon, style: TextStyle(fontSize: 20)),
                               SizedBox(width: 8),
                               Expanded(
                                 child: Text(
-                                  task['title'],
+                                  task.title,
                                   style: TextStyle(
-                                    decoration: task['done']
+                                    decoration: task.done
                                         ? TextDecoration.lineThrough
                                         : TextDecoration.none,
                                   ),
@@ -170,13 +159,13 @@ class _TodoFastHomeState extends State<TodoFastHome> {
                               ),
                             ],
                           ),
-                          value: task['done'],
+                          value: task.done,
                           onChanged: (value) => _toggleTask(index, value),
                         );
                       },
                     ),
             ),
-            if (_tasks.any((task) => task['done']))
+            if (_tasks.any((task) => task.done))
               ElevatedButton.icon(
                 onPressed: _deleteCompletedTasks,
                 icon: Icon(Icons.delete),
